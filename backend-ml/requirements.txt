@@ -2,6 +2,5 @@ Flask==2.3.3
 Flask-Cors==4.0.0
 ultralytics>=8.1.0
 Pillow>=11.0.0
-torch==2.2.2+cpu
-torchvision==0.17.2+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.7.1
+torchvision==0.22.1
