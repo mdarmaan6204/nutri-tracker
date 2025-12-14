@@ -7,6 +7,11 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 
+// ✅ ML service URL (Hugging Face by default, override via env)
+const ML_API_URL =
+  process.env.ML_API_URL ||
+  "https://malikgrd786-nutrition-yolo-model.hf.space/api/predict";
+
 // ✅ ASYNC HANDLER WRAPPER
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch((err) => {
@@ -58,7 +63,7 @@ export default function (JWT_SECRET) {
     }
 
     console.log("✅ Image received:", req.file.filename);
-    console.log("🔄 Sending to Flask ML model...");
+    console.log("🔄 Sending to ML service:", ML_API_URL);
 
     try {
       // ✅ SEND IMAGE TO FLASK ML MODEL
@@ -66,14 +71,10 @@ export default function (JWT_SECRET) {
       const fileStream = fs.createReadStream(req.file.path);
       formData.append("image", fileStream, req.file.originalname);
 
-      const flaskResponse = await axios.post(
-        "http://127.0.0.1:5000/api/predict",
-        formData,
-        {
-          headers: formData.getHeaders(),
-          timeout: 30000,
-        }
-      );
+      const flaskResponse = await axios.post(ML_API_URL, formData, {
+        headers: formData.getHeaders(),
+        timeout: 30000,
+      });
 
       console.log("✅ Flask response received:", flaskResponse.data);
 
@@ -90,7 +91,8 @@ export default function (JWT_SECRET) {
         prediction: flaskResponse.data,
       });
     } catch (flaskError) {
-      console.error("❌ Flask error:");
+      console.error("❌ ML service error:");
+      console.error("   URL:", ML_API_URL);
       console.error("   Status:", flaskError.response?.status);
       console.error("   Message:", flaskError.message);
 
@@ -101,7 +103,7 @@ export default function (JWT_SECRET) {
 
       return res.status(500).json({
         success: false,
-        message: "ML model unavailable. Is Flask running on port 5001?",
+        message: "ML model unavailable. Check ML_API_URL and Hugging Face Space status.",
         error: flaskError.message,
       });
     }

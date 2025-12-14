@@ -5,30 +5,31 @@ import MealHistory from "../models/MealHistory.js";
 import { createVerifyToken } from "../middleware/auth.js";
 import FormData from "form-data";
 
+// ML service URL (Hugging Face by default, override via env)
+const ML_API_URL =
+  process.env.ML_API_URL ||
+  "https://malikgrd786-nutrition-yolo-model.hf.space/api/predict";
+
 export default function (JWT_SECRET) {
   const router = express.Router();
   const upload = multer({ dest: "uploads/" });
   const verifyToken = createVerifyToken(JWT_SECRET);
 
-  // POST - Upload meal image
+  // POST - Upload meal image and create history entry
   router.post("/add", verifyToken, upload.single("image"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No image provided" });
       }
 
-      // Forward to Flask ML backend
+      // Forward to ML backend (Hugging Face)
       const formData = new FormData();
       const fileBlob = Buffer.from(req.file.buffer);
       formData.append("image", fileBlob, req.file.originalname);
 
-      const flaskResponse = await axios.post(
-        "http://127.0.0.1:5001/api/predict",
-        formData,
-        {
-          headers: formData.getHeaders(),
-        }
-      );
+      const flaskResponse = await axios.post(ML_API_URL, formData, {
+        headers: formData.getHeaders(),
+      });
 
       // Save meal to history
       const meal = new MealHistory({
@@ -50,7 +51,7 @@ export default function (JWT_SECRET) {
         meal,
       });
     } catch (error) {
-      console.error(error);
+      console.error("❌ ML / mealHistory error:", error.message);
       res.status(500).json({ error: error.message });
     }
   });
