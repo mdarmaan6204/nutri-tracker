@@ -13,6 +13,18 @@ const asyncHandler = (fn) => (req, res, next) => {
 export default function (JWT_SECRET) {
   const router = express.Router();
 
+  // ✅ Helper to determine cookie settings based on environment
+  const getCookieOptions = () => {
+    const isProduction = process.env.NODE_ENV === "production";
+    return {
+      httpOnly: true,
+      secure: isProduction, // ✅ true only in production (HTTPS)
+      sameSite: isProduction ? "none" : "lax", // ✅ "none" for cross-site in production
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/", // ✅ Ensure cookie is available for all routes
+    };
+  };
+
   // ✅ POST /api/auth/signup
   router.post(
     "/signup",
@@ -42,20 +54,15 @@ export default function (JWT_SECRET) {
       const user = new User({ name, username, password });
       await user.save();
 
-      // ✅ CREATE JWT TOKEN (NEW)
+      // ✅ CREATE JWT TOKEN
       const token = jwt.sign(
         { id: user._id, username: user.username },
         JWT_SECRET,
         { expiresIn: "7d" }
       );
 
-      // ✅ SET COOKIE (NEW)
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      // ✅ SET COOKIE WITH PROPER OPTIONS
+      res.cookie("token", token, getCookieOptions());
 
       console.log("✅ User created and logged in:", username);
       console.log("✅ Token created, expires in 7 days");
@@ -72,6 +79,7 @@ export default function (JWT_SECRET) {
       });
     })
   );
+
   // ✅ POST /api/auth/login
   router.post(
     "/login",
@@ -89,7 +97,7 @@ export default function (JWT_SECRET) {
         });
       }
 
-      // ✅ Find user (WITHOUT .lean() so we can call methods)
+      // ✅ Find user
       const user = await User.findOne({ username });
 
       if (!user) {
@@ -100,7 +108,7 @@ export default function (JWT_SECRET) {
         });
       }
 
-      // ✅ Compare password (this is a Mongoose method)
+      // ✅ Compare password
       const isPasswordValid = await user.comparePassword(password);
 
       if (!isPasswordValid) {
@@ -118,13 +126,8 @@ export default function (JWT_SECRET) {
         { expiresIn: "7d" }
       );
 
-      // ✅ Set cookie
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: true, // Set to true in production with HTTPS
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      // ✅ SET COOKIE WITH PROPER OPTIONS
+      res.cookie("token", token, getCookieOptions());
 
       console.log("✅ Login successful:", username);
       console.log("✅ Token created, expires in 7 days");
@@ -148,7 +151,8 @@ export default function (JWT_SECRET) {
     asyncHandler(async (req, res) => {
       console.log("🔄 /api/auth/logout called");
 
-      res.clearCookie("token");
+      // ✅ Clear cookie with same options as set
+      res.clearCookie("token", getCookieOptions());
 
       res.json({
         success: true,

@@ -32,16 +32,18 @@ import mealsRoutes from "./routes/meals.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ MIDDLEWARE
+// ✅ MIDDLEWARE - CORS with all necessary origins
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
-      "https://nutri-tracker-frontend.onrender.com",
+      "http://localhost:3000", // ✅ Added for local React
+      "http://localhost:5173", // ✅ Vite local
+      "https://nutri-tracker-frontend.onrender.com", // ✅ Production
     ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // ✅ Allow cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
   })
 );
 
@@ -52,6 +54,11 @@ app.use(cookieParser());
 // Debug middleware
 app.use((req, res, next) => {
   console.log(`\n📨 ${req.method} ${req.path}`);
+  console.log("🍪 Cookies:", req.cookies);
+  console.log(
+    "🔐 Auth header:",
+    req.headers.authorization ? "✅ Present" : "❌ Missing"
+  );
   next();
 });
 
@@ -66,6 +73,7 @@ app.get("/health", (req, res) => {
     database:
       mongoose.connection.readyState === 1 ? "✅ Connected" : "❌ Disconnected",
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
   });
 });
 
@@ -140,10 +148,7 @@ const connectDB = async () => {
       return;
     } catch (err) {
       retries++;
-      console.error(
-        `❌ Connection attempt ${retries} failed:`,
-        err.message
-      );
+      console.error(`❌ Connection attempt ${retries} failed:`, err.message);
 
       if (retries < MAX_RETRIES) {
         console.log(`⏳ Retrying in 5 seconds...`);
