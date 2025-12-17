@@ -1,15 +1,17 @@
 import axios from 'axios';
 import { getAPIUrl } from '../utils/config';
+import { storage } from '../utils/storage';
 
 const API_BASE_URL = `${getAPIUrl()}/api`;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, // ✅ Enable sending cookies with cross-origin requests
 });
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = storage.getToken(); // ✅ Use storage utility instead of direct localStorage
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

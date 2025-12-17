@@ -35,6 +35,37 @@ export const storage = {
   // Clear user data (logout)
   clearUser: () => {
     localStorage.removeItem("user");
-    console.log("🗑️ User cleared from localStorage");
+    localStorage.removeItem("token"); // ✅ Also clear token
+    console.log("🗑️ User and token cleared from localStorage");
+  },
+
+  // ✅ TOKEN MANAGEMENT - For cross-origin authentication fallback
+  
+  // Save authentication token
+  setToken: (token) => {
+    if (token) {
+      localStorage.setItem("token", token);
+      console.log("🔐 Token saved to localStorage");
+    }
+  },
+
+  // Get authentication token
+  getToken: () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token && token !== "undefined" && token !== "null") {
+        return token;
+      }
+      return null;
+    } catch (error) {
+      console.error("❌ Error getting token:", error);
+      return null;
+    }
+  },
+
+  // Clear authentication token
+  clearToken: () => {
+    localStorage.removeItem("token");
+    console.log("🗑️ Token cleared from localStorage");
   },
 };

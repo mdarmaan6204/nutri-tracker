@@ -29,91 +29,91 @@ const FoodAnalyzer = () => {
   };
 
   // Handle save meal
-const handleSaveMeal = async () => {
-  if (!result) return;
+  const handleSaveMeal = async () => {
+    if (!result) return;
 
-  setIsSaving(true);
-  try {
-    //  Get token from localStorage
-    const user = storage.getUser();
-    const token = localStorage.getItem("token");
+    setIsSaving(true);
+    try {
+      // ✅ Get token using storage utility
+      const user = storage.getUser();
+      const token = storage.getToken(); // ✅ Use storage utility instead of direct localStorage
 
-    console.log("🔐 Token:", token ? " Found" : "Not found");
-    console.log("👤 User:", user);
+      console.log("🔐 Token:", token ? "✅ Found" : "❌ Not found");
+      console.log("👤 User:", user);
 
-    if (!token) {
-      toast.error("Please login first");
-      setIsSaving(false);
-      return;
-    }
+      if (!token) {
+        toast.error("Please login first");
+        setIsSaving(false);
+        return;
+      }
 
-    // Handle both food_items and detected formats
-    const foodName =
-      result.food_items?.[0]?.name || result.detected?.[0] || "Unknown Food";
+      // Handle both food_items and detected formats
+      const foodName =
+        result.food_items?.[0]?.name || result.detected?.[0] || "Unknown Food";
 
-    // Convert food_items to nutrition format
-    const nutritionData =
-      result.food_items?.map((item) => ({
-        name: item.name,
-        calories: item.calories,
-        protein: item.protein,
-        carbohydrates: item.carbs,
-        fat: item.fat,
-      })) ||
-      result.nutrition ||
-      [];
+      // Convert food_items to nutrition format
+      const nutritionData =
+        result.food_items?.map((item) => ({
+          name: item.name,
+          calories: item.calories,
+          protein: item.protein,
+          carbohydrates: item.carbs,
+          fat: item.fat,
+        })) ||
+        result.nutrition ||
+        [];
 
-    console.log("📤 Sending to /api/meals/save");
+      console.log("📤 Sending to /api/meals/save");
 
-    const saveUrl = getFullURL("/api/meals/save");
+      const saveUrl = getFullURL("/api/meals/save");
 
-    //  FIXED: Send token in Authorization header
-    const response = await fetch(saveUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`, //  Send token here
-      },
-      credentials: "include", //  Also try to send cookies
-      body: JSON.stringify({
-        foodName,
-        detected:
-          result.food_items?.map((item) => item.name) ||
-          result.detected ||
-          [],
-        nutrition: nutritionData,
-        mealType,
-      }),
-    });
-
-    const data = await response.json();
-    console.log("Response:", data);
-
-    if (!response.ok) {
-      console.error("Response error:", {
-        status: response.status,
-        statusText: response.statusText,
-        data,
+      //  FIXED: Send token in Authorization header
+      const response = await fetch(saveUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`, //  Send token here
+        },
+        credentials: "include", //  Also try to send cookies
+        body: JSON.stringify({
+          foodName,
+          detected:
+            result.food_items?.map((item) => item.name) ||
+            result.detected ||
+            [],
+          nutrition: nutritionData,
+          mealType,
+        }),
       });
-      throw new Error(
-        data.message || `HTTP ${response.status}: ${response.statusText}`
-      );
+
+      const data = await response.json();
+      console.log("Response:", data);
+
+      if (!response.ok) {
+        console.error("Response error:", {
+          status: response.status,
+          statusText: response.statusText,
+          data,
+        });
+        throw new Error(
+          data.message || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+
+      toast.success(" Meal saved to your history!");
+
+      // Reset form
+      setFile(null);
+      setPreview(null);
+      setResult(null);
+      setMealType("snack");
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error(err.message || "Error saving meal");
+    } finally {
+      setIsSaving(false);
     }
-
-    toast.success(" Meal saved to your history!");
-
-    // Reset form
-    setFile(null);
-    setPreview(null);
-    setResult(null);
-    setMealType("snack");
-  } catch (err) {
-    console.error("Save error:", err);
-    toast.error(err.message || "Error saving meal");
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();

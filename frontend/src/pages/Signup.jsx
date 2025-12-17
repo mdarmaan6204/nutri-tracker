@@ -56,7 +56,9 @@ const Signup = () => {
         nameRef.current.value = "";
         usernameRef.current.value = "";
         passwordRef.current.value = "";
+        // ✅ Save both user data and token
         storage.setUser(data.user);
+        storage.setToken(data.token); // ✅ Save token for cross-origin authentication
         navigate("/");
       } else {
         toast.error(data.message || "Signup failed");

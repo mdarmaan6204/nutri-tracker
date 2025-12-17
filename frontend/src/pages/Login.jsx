@@ -58,7 +58,9 @@ const Login = () => {
         // Clear form
         usernameRef.current.value = "";
         passwordRef.current.value = "";
+        // ✅ Save both user data and token
         storage.setUser(data.user);
+        storage.setToken(data.token); // ✅ Save token for cross-origin authentication
         navigate("/analyze");
       } else {
         toast.error(data.message || "Login failed");

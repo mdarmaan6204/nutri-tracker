@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { storage } from "../utils/storage";
+import { getFullURL } from "../utils/config";
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
@@ -21,12 +22,21 @@ export const useAuth = () => {
     try {
       console.log("🔍 Fetching user profile...");
       
-      const response = await fetch("http://localhost:5000/api/auth/profile", {
+      // ✅ Build headers with token if available
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      
+      const token = storage.getToken();
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
+      // ✅ Use dynamic API URL instead of hardcoded localhost
+      const response = await fetch(getFullURL("/api/auth/profile"), {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+        headers,
+        credentials: "include", // ✅ Send cookies if available
       });
 
       if (!response.ok) {
@@ -54,7 +64,7 @@ export const useAuth = () => {
 
   // Logout function
   const logout = () => {
-    storage.clearUser();
+    storage.clearUser(); // ✅ This now clears both user and token (updated in storage.js)
     setUser(null);
     setIsLoggedIn(false);
   };

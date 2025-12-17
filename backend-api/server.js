@@ -33,21 +33,21 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // ✅ MIDDLEWARE - CORS with all necessary origins
-app.use(
-  cors({
-    origin: [
-      "http://localhost:3000", // ✅ Added for local React
-      "http://localhost:5173", // ✅ Vite local
-      "https://nutri-tracker-frontend.onrender.com", // ✅ Production
-    ],
-    credentials: true, 
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
-  })
-);
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://nutri-tracker-frontend.onrender.com",
+  ],
+  credentials: true, // ✅ Essential for cookies in cross-origin requests
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Set-Cookie"], // ✅ Allow frontend to read Set-Cookie header
+  optionsSuccessStatus: 200,
+};
 
-app.options("*", cors());
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(cookieParser());
